@@ -20,7 +20,7 @@ export const SITE = {
   location: "Karachi, Pakistan",
   email: "moeezshah2019@gmail.com",
   linkedin: "https://www.linkedin.com/in/moeez-shah-3670091b0/",
-  cv: "assets/cv/Moeez-Shah-Profile.pdf",
+  cv: "assets/cv/Moeez-Ahmed-Shah-CV.pdf",
 
   heroVideo: "assets/video/wahm-loop.mp4",
   heroPoster: "assets/img/hero-poster.jpg",
