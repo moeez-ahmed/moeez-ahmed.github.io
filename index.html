@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Moeez Ahmed Shah | Senior Game Developer</title>
+  <meta name="description" content="Moeez Ahmed Shah, senior game developer and gameplay architect working in Unreal Engine 5 and Unity: open worlds, multiplayer and AI-driven characters.">
+  <meta name="theme-color" content="#17110D">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Moeez Ahmed Shah | Senior Game Developer">
+  <meta property="og:description" content="Open worlds, multiplayer and AI-driven characters in Unreal Engine 5 and Unity.">
+  <meta property="og:url" content="https://moeez-ahmed.github.io/">
+  <meta property="og:image" content="https://moeez-ahmed.github.io/assets/img/og.jpg">
+  <link rel="canonical" href="https://moeez-ahmed.github.io/">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Hanken+Grotesk:wght@400;500;600&family=Reem+Kufi:wght@500;600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preload" as="image" href="assets/img/hero-poster.jpg">
+
+  <script type="importmap">
+    { "imports": { "three": "./assets/vendor/three.module.min.js", "three/addons/": "./assets/vendor/addons/" } }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body class="is-loading">
+  <div class="loader" id="loader" aria-hidden="true"><canvas id="loader-canvas"></canvas></div>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="nav" id="nav">
+    <a class="nav__brand" href="#top" aria-label="Back to top"><span data-bind="initials">MS</span></a>
+    <button class="nav__toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-links">
+      <span class="nav__toggle-bars" aria-hidden="true"></span><span class="sr-only">Menu</span>
+    </button>
+    <nav aria-label="Main">
+      <ul class="nav__links" id="nav-links">
+        <li><a href="#films">Films</a></li>
+        <li><a href="#work">Work</a></li>
+        <li><a href="#systems">Systems</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#journey">Journey</a></li>
+        <li><a class="nav__cta" href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main">
+    <!-- HERO -->
+    <section class="hero" id="top" aria-label="Introduction">
+      <video class="hero__video" id="hero-video" muted loop playsinline preload="auto" aria-hidden="true"></video>
+      <div class="hero__shade" aria-hidden="true"></div>
+      <canvas class="hero__sand" id="hero-sand" aria-hidden="true"></canvas>
+      <div class="hero__content">
+        <h1 class="hero__name"><span class="hero__rule" aria-hidden="true"></span><span data-bind="name">Moeez Ahmed Shah</span><span class="hero__rule" aria-hidden="true"></span></h1>
+        <p class="hero__role" data-bind="role"></p>
+        <p class="hero__tagline" data-bind="tagline"></p>
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="#films" id="hero-watch">Watch WAHM</a>
+          <a class="btn btn--ghost" href="#work">See the work</a>
+        </div>
+      </div>
+      <button class="hero__motion" id="hero-motion" type="button" aria-pressed="false">Pause background</button>
+    </section>
+
+    <!-- FILMS -->
+    <section class="section films" id="films" aria-labelledby="films-title">
+      <div class="wrap">
+        <div class="section__head">
+          <h2 class="section__title" id="films-title">Films</h2>
+          <div class="tabs" id="film-tabs" role="tablist" aria-label="Choose a film"></div>
+        </div>
+        <div class="films__layout">
+          <div class="player" id="player">
+            <div class="player__stage" id="player-stage">
+              <video class="player__video" id="film-video" preload="none" playsinline></video>
+              <button class="player__cover" id="player-cover" type="button">
+                <span class="player__card">
+                  <span class="player__native" id="cover-native" lang="ar"></span>
+                  <span class="player__title"><span class="hero__rule" aria-hidden="true"></span><span id="cover-title"></span><span class="hero__rule" aria-hidden="true"></span></span>
+                  <span class="player__play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span>
+                  <span class="player__hint" id="cover-hint">Play film</span>
+                </span>
+              </button>
+            </div>
+            <div class="player__bar">
+              <button class="icon-btn" id="pp-btn" type="button" aria-label="Play"><svg viewBox="0 0 24 24" class="i-play"><path d="M8 5.5v13l11-6.5z"/></svg><svg viewBox="0 0 24 24" class="i-pause"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg></button>
+              <span class="player__time" id="t-now">0:00</span>
+              <div class="scrub" id="scrub" role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-valuetext="0:00">
+                <div class="scrub__track"><div class="scrub__buffer" id="scrub-buffer"></div><div class="scrub__fill" id="scrub-fill"></div></div>
+                <div class="scrub__ticks" id="scrub-ticks"></div>
+                <div class="scrub__thumb" id="scrub-thumb"></div>
+              </div>
+              <span class="player__time" id="t-total">0:00</span>
+              <button class="icon-btn" id="mute-btn" type="button" aria-label="Mute"><svg viewBox="0 0 24 24" class="i-vol"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><svg viewBox="0 0 24 24" class="i-mute"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+              <button class="icon-btn" id="fs-btn" type="button" aria-label="Full screen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
+            </div>
+          </div>
+          <aside class="films__side">
+            <p class="films__blurb" id="film-blurb"></p>
+            <h3 class="films__chapters-title">Chapters</h3>
+            <ol class="chapters" id="chapters"></ol>
+            <button class="link-btn" id="film-case" type="button">Read the case study</button>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- WORK -->
+    <section class="section work" id="work" aria-labelledby="work-title">
+      <div class="wrap">
+        <div class="section__head">
+          <h2 class="section__title" id="work-title">Selected work</h2>
+          <div class="chips" id="work-filters" role="group" aria-label="Filter projects"></div>
+        </div>
+        <div class="grid" id="work-grid"></div>
+        <div class="earlier" id="earlier">
+          <h3 class="earlier__title">Earlier work</h3>
+          <ul class="earlier__list" id="earlier-list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SYSTEMS -->
+    <section class="section systems" id="systems" aria-labelledby="systems-title" data-3d>
+      <div class="wrap systems__layout">
+        <div class="systems__text">
+          <h2 class="section__title" id="systems-title">Systems I build</h2>
+          <p class="section__lede">Each ring of the astrolabe is one area of my work. Hover a ring or pick one from the list.</p>
+          <ul class="systems__list" id="systems-list"></ul>
+        </div>
+        <div class="systems__visual">
+          <canvas class="systems__canvas" id="astrolabe" aria-hidden="true"></canvas>
+          <div class="systems__panel" id="systems-panel" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="section about" id="about" aria-labelledby="about-title" data-3d>
+      <div class="wrap about__layout">
+        <div class="about__text">
+          <h2 class="section__title" id="about-title">About</h2>
+          <div id="about-body"></div>
+          <dl class="facts" id="about-facts"></dl>
+        </div>
+        <figure class="about__visual">
+          <div class="city">
+            <canvas class="city__canvas" id="city" aria-hidden="true"></canvas>
+            <div class="city__tip" id="city-tip" hidden></div>
+          </div>
+          <figcaption>The worlds I build, on one island: WAHM&#39;s settlement, KingdomLand&#39;s Riyadh tower, Tamr Farm&#39;s palms and the camel caravan from Caravan of the Sands. Drag to turn it, and pick a landmark to open its project.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- JOURNEY -->
+    <section class="section journey" id="journey" aria-labelledby="journey-title">
+      <div class="wrap">
+        <div class="section__head">
+          <h2 class="section__title" id="journey-title">Journey</h2>
+        </div>
+        <ol class="timeline" id="timeline"><li class="timeline__line" aria-hidden="true"><span class="timeline__fill" id="timeline-fill"></span></li></ol>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section class="contact" id="contact" aria-labelledby="contact-title">
+      <div class="contact__bg" aria-hidden="true"></div>
+      <div class="wrap contact__inner">
+        <h2 class="contact__title" id="contact-title">Building something ambitious?<br>Let's talk.</h2>
+        <p class="contact__lede">For studios and teams that need a world built: gameplay systems, multiplayer and technical leadership.</p>
+        <div class="contact__actions" id="contact-actions"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <span id="footer-copy"></span>
+      <a href="#top">Back to top</a>
+    </div>
+  </footer>
+
+  <dialog class="modal" id="project-modal" aria-labelledby="modal-title">
+    <div class="modal__inner" id="modal-inner"></div>
+  </dialog>
+
+  <noscript><style>.loader{display:none}body.is-loading{overflow:auto}</style><p class="noscript">This portfolio needs JavaScript turned on to show projects and films.</p></noscript>
+</body>
+</html>
