@@ -46,6 +46,7 @@
         <li><a class="nav__cta" href="#contact">Contact</a></li>
       </ul>
     </nav>
+    <button class="nav__trophy" id="trophy-btn" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v3a5 5 0 0 1-10 0V4zM5 5H3v2a4 4 0 0 0 4 4M19 5h2v2a4 4 0 0 1-4 4M12 12v4M8.5 20h7M10 16h4l.5 4h-5z"/></svg><span id="trophy-count">0/0</span></button>
   </header>
 
   <canvas class="world" id="world" aria-hidden="true"></canvas>
@@ -170,12 +171,19 @@
         <div class="systems__text">
           <h2 class="section__title" id="systems-title">Systems I build</h2>
           <p class="section__lede">Each ring of the astrolabe is one area of my work. Hover a ring or pick one from the list.</p>
+          <div class="view-toggle systems__toggle" id="systems-view" role="group" aria-label="Choose a view">
+            <button class="view-toggle__btn" type="button" aria-pressed="true" data-view="astrolabe">Astrolabe</button>
+            <button class="view-toggle__btn" type="button" aria-pressed="false" data-view="tree">Skill tree</button>
+          </div>
           <ul class="systems__list" id="systems-list"></ul>
         </div>
         <div class="systems__visual">
           <canvas class="systems__canvas" id="astrolabe" aria-hidden="true"></canvas>
           <div class="systems__panel" id="systems-panel" aria-live="polite"></div>
         </div>
+      </div>
+      <div class="wrap">
+        <div class="skilltree" id="skilltree" hidden></div>
       </div>
     </section>
 
@@ -217,7 +225,8 @@
     <section class="section journey" id="journey" aria-labelledby="journey-title" data-world-shot="caravan-hold">
       <div class="wrap">
         <div class="section__head">
-          <h2 class="section__title" id="journey-title">Journey</h2>
+          <h2 class="section__title" id="journey-title">Quest log</h2>
+          <p class="section__lede journey__lede">Every role so far, newest first. The active quest is at the top.</p>
         </div>
         <ol class="timeline" id="timeline"><li class="timeline__line" aria-hidden="true"><span class="timeline__fill" id="timeline-fill"></span></li></ol>
       </div>
@@ -243,6 +252,11 @@
 
   <div class="start-flash" id="start-flash" aria-hidden="true"></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="unlocks" id="unlocks" aria-live="polite"></div>
+
+  <dialog class="trophies" id="trophies" aria-labelledby="trophies-title">
+    <div class="trophies__inner" id="trophies-inner"></div>
+  </dialog>
 
   <dialog class="modal" id="project-modal" aria-labelledby="modal-title">
     <div class="modal__inner" id="modal-inner"></div>
