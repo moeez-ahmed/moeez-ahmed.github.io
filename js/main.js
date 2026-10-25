@@ -37,6 +37,100 @@ const WEBGL = (() => {
 })();
 
 /* ---------------------------------------------------------------
+   UI sounds: synthesised with Web Audio, off until the visitor turns them on
+   --------------------------------------------------------------- */
+const SFX = (() => {
+  let ctx = null;
+  let master = null;
+  let on = false;
+  try {
+    on = localStorage.getItem("ms-sound") === "on";
+  } catch {}
+  function ensure() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0.16;
+      master.connect(ctx.destination);
+    }
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    return ctx;
+  }
+  function tone(freq, dur, type = "sine", when = 0, vol = 1, glideTo = 0) {
+    const c = ensure();
+    if (!c) return;
+    const t = c.currentTime + when;
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (glideTo) o.frequency.exponentialRampToValueAtTime(glideTo, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(master);
+    o.start(t);
+    o.stop(t + dur + 0.03);
+  }
+  function whoosh(dur, from, to, vol = 0.5) {
+    const c = ensure();
+    if (!c) return;
+    const t = c.currentTime;
+    const buf = c.createBuffer(1, Math.ceil(c.sampleRate * dur), c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const f = c.createBiquadFilter();
+    f.type = "bandpass";
+    f.Q.value = 1.4;
+    f.frequency.setValueAtTime(from, t);
+    f.frequency.exponentialRampToValueAtTime(to, t + dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.3);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f).connect(g).connect(master);
+    src.start(t);
+  }
+  const SOUNDS = {
+    tick: () => tone(1700, 0.045, "triangle", 0, 0.22),
+    select: () => {
+      tone(660, 0.1, "triangle", 0, 0.45);
+      tone(990, 0.14, "triangle", 0.06, 0.4);
+    },
+    swipe: () => whoosh(0.24, 500, 2600, 0.35),
+    open: () => {
+      whoosh(0.32, 300, 1600, 0.28);
+      tone(440, 0.28, "sine", 0.03, 0.22, 660);
+    },
+    close: () => tone(560, 0.16, "sine", 0, 0.25, 320),
+    start: () => [392, 523.25, 783.99].forEach((f, i) => tone(f, 0.42, "triangle", i * 0.09, 0.4)),
+    unlock: () => [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, 0.38, "triangle", i * 0.075, 0.38)),
+  };
+  return {
+    get on() {
+      return on;
+    },
+    play(name) {
+      if (!on) return;
+      try {
+        SOUNDS[name]?.();
+      } catch {}
+    },
+    set(value) {
+      on = value;
+      try {
+        localStorage.setItem("ms-sound", value ? "on" : "off");
+      } catch {}
+      if (value) SOUNDS.select();
+    },
+  };
+})();
+
+/* ---------------------------------------------------------------
    Achievements: unlock as visitors explore. Saved in their browser.
    --------------------------------------------------------------- */
 const TROPHY_SVG =
@@ -81,6 +175,7 @@ const ACH = (() => {
     el.innerHTML = `<span class="unlock__icon">${TROPHY_SVG}</span><span class="unlock__text"><span class="unlock__kicker">Achievement unlocked</span><strong>${esc(a.title)}</strong><span class="unlock__desc">${esc(a.desc)}</span></span>`;
     box.appendChild(el);
     requestAnimationFrame(() => el.classList.add("is-on"));
+    SFX.play("unlock");
     document.getElementById("trophy-btn")?.classList.add("is-bump");
     setTimeout(() => document.getElementById("trophy-btn")?.classList.remove("is-bump"), 700);
     setTimeout(() => {
@@ -452,8 +547,58 @@ function initFilms() {
   v.addEventListener("pause", () => {
     P.root.classList.remove("is-playing");
     P.pp.setAttribute("aria-label", "Play");
+    setCinema(false);
   });
-  v.addEventListener("ended", () => P.cover.classList.remove("is-hidden"));
+  v.addEventListener("ended", () => {
+    P.cover.classList.remove("is-hidden");
+    setCinema(false);
+  });
+
+  // cinema mode: the rest of the page dims while a film plays
+  const shade = document.createElement("div");
+  shade.className = "cinema-shade";
+  shade.setAttribute("aria-hidden", "true");
+  $("#main").appendChild(shade);
+  const cinemaBtn = $("#cinema-btn");
+  let cinemaPref = true;
+  try {
+    cinemaPref = localStorage.getItem("ms-cinema") !== "off";
+  } catch {}
+  let stageVisible = false;
+  function setCinema(on) {
+    document.body.classList.toggle("is-cinema", on && cinemaPref);
+  }
+  const syncCinemaBtn = () => {
+    cinemaBtn?.setAttribute("aria-pressed", String(cinemaPref));
+    cinemaBtn?.classList.toggle("is-off", !cinemaPref);
+  };
+  syncCinemaBtn();
+  cinemaBtn?.addEventListener("click", () => {
+    cinemaPref = !cinemaPref;
+    try {
+      localStorage.setItem("ms-cinema", cinemaPref ? "on" : "off");
+    } catch {}
+    syncCinemaBtn();
+    setCinema(cinemaPref && !v.paused && stageVisible);
+  });
+  v.addEventListener("play", () => {
+    if (!cinemaPref) return;
+    const r = P.stage.getBoundingClientRect();
+    if (r.top < 0 || r.bottom > innerHeight) P.stage.scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "center" });
+    setCinema(true);
+  });
+  new IntersectionObserver(
+    ([e]) => {
+      stageVisible = e.intersectionRatio > 0.35;
+      if (!stageVisible) setCinema(false);
+      else if (!v.paused) setCinema(true);
+    },
+    { threshold: [0, 0.35, 0.7] }
+  ).observe(P.stage);
+  shade.addEventListener("click", () => document.body.classList.remove("is-cinema"));
+  addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && document.body.classList.contains("is-cinema") && !$("#project-modal")?.open) document.body.classList.remove("is-cinema");
+  });
   v.addEventListener("volumechange", () => {
     P.root.classList.toggle("is-muted", v.muted);
     P.mute.setAttribute("aria-label", v.muted ? "Unmute" : "Mute");
@@ -850,6 +995,7 @@ function openProject(id) {
   modal.scrollTop = 0;
   history.replaceState(null, "", `#project/${encodeURIComponent(p.id)}`);
   ACH.unlock("level");
+  SFX.play("open");
   ACH.track("projects", p.id, 6, "completionist");
 }
 
@@ -872,6 +1018,7 @@ function initModal() {
     }
   });
   modal.addEventListener("close", () => {
+    SFX.play("close");
     $("#modal-inner").innerHTML = "";
     if (location.hash.startsWith("#project/")) history.replaceState(null, "", location.pathname + location.search);
   });
@@ -1237,6 +1384,7 @@ function initLevels() {
     if (n === cur) return false;
     cur = n;
     layout();
+    SFX.play("swipe");
     return true;
   }
   const openCurrent = () => visible[cur] && openProject(visible[cur].dataset.id);
@@ -1360,6 +1508,7 @@ function initStart() {
     if (!armed) return false;
     retire();
     ACH.unlock("start");
+    SFX.play("start");
     const flash = $("#start-flash");
     if (flash && !REDUCED) {
       flash.classList.remove("is-on");
@@ -1443,6 +1592,7 @@ function initControls() {
     const z = zoneInView();
     if (!z) return;
     e.preventDefault();
+    SFX.play("tick");
     e.key === "ArrowLeft" ? z.left() : z.right();
   });
 
@@ -1458,9 +1608,11 @@ function initControls() {
     if (down && !h.down) {
       h.down = true;
       h.next = now + REPEAT_DELAY;
+      SFX.play("tick");
       fire();
     } else if (down && repeat && now >= h.next) {
       h.next = now + REPEAT_RATE;
+      SFX.play("tick");
       fire();
     } else if (!down) h.down = false;
   }
@@ -1662,6 +1814,97 @@ function initTrophies() {
 }
 
 /* ---------------------------------------------------------------
+   Reticle cursor (desktop mouse only)
+   --------------------------------------------------------------- */
+function initReticle() {
+  if (!FINE_POINTER || REDUCED) return;
+  const el = document.createElement("div");
+  el.className = "reticle is-hidden";
+  el.setAttribute("aria-hidden", "true");
+  el.innerHTML = `<span class="reticle__ring"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="12"/><path d="M20 3v6M20 31v6M3 20h6M31 20h6"/></svg></span><span class="reticle__dot"></span>`;
+  document.body.appendChild(el);
+  document.documentElement.classList.add("has-reticle");
+  const ring = el.firstElementChild;
+  const dot = el.lastElementChild;
+  const HOT = 'a[href], button, [role="slider"], .level, summary, label, [data-project], canvas.is-pointer';
+  let x = -100;
+  let y = -100;
+  let rx = x;
+  let ry = y;
+  let raf = 0;
+  let seen = false;
+  let off = false;
+
+  function tick() {
+    raf = 0;
+    rx += (x - rx) * 0.3;
+    ry += (y - ry) * 0.3;
+    dot.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    ring.style.transform = `translate3d(${rx}px, ${ry}px, 0)`;
+    if (Math.abs(x - rx) + Math.abs(y - ry) > 0.2) raf = requestAnimationFrame(tick);
+  }
+  addEventListener(
+    "pointermove",
+    (e) => {
+      if (e.pointerType !== "mouse") return;
+      x = e.clientX;
+      y = e.clientY;
+      if (!seen) {
+        seen = true;
+        rx = x;
+        ry = y;
+      }
+      const t = e.target;
+      const hot = !!t.closest?.(HOT) || t.classList?.contains("is-pointer");
+      el.classList.toggle("is-hot", hot);
+      el.classList.toggle("is-grab", !hot && !!t.closest?.(".city__canvas, .levels__stage, .systems__canvas"));
+      el.classList.toggle("is-hidden", off);
+      if (!raf) raf = requestAnimationFrame(tick);
+    },
+    { passive: true }
+  );
+  addEventListener("pointerdown", () => el.classList.add("is-down"));
+  addEventListener("pointerup", () => el.classList.remove("is-down"));
+  document.documentElement.addEventListener("mouseleave", () => el.classList.add("is-hidden"));
+  // dialogs and full screen sit above the page, so the normal cursor comes back there
+  const sync = () => {
+    off = !!document.fullscreenElement || !!document.querySelector("dialog[open]");
+    document.documentElement.classList.toggle("reticle-off", off);
+    el.classList.toggle("is-hidden", off || !seen);
+  };
+  new MutationObserver(sync).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["open"] });
+  document.addEventListener("fullscreenchange", sync);
+}
+
+function initSound() {
+  const btn = $("#sound-btn");
+  if (!btn) return;
+  if (!(window.AudioContext || window.webkitAudioContext)) {
+    btn.hidden = true;
+    return;
+  }
+  const sync = () => {
+    btn.setAttribute("aria-pressed", String(SFX.on));
+    btn.setAttribute("aria-label", SFX.on ? "Sound effects on" : "Sound effects off");
+    btn.classList.toggle("is-on", SFX.on);
+  };
+  sync();
+  btn.addEventListener("click", () => {
+    SFX.set(!SFX.on);
+    sync();
+  });
+  // a soft tick for every button and link
+  document.addEventListener(
+    "click",
+    (e) => {
+      const t = e.target.closest?.("button, a[href], [role='slider']");
+      if (t && t !== btn) SFX.play("tick");
+    },
+    true
+  );
+}
+
+/* ---------------------------------------------------------------
    Contact
    --------------------------------------------------------------- */
 function initContact() {
@@ -1710,6 +1953,8 @@ safely("world", initWorld);
 safely("start", initStart);
 safely("controls", initControls);
 safely("trophies", initTrophies);
+safely("reticle", initReticle);
+safely("sound", initSound);
 
 // deep link: /#project/kingdomland opens that case study
 const deep = decodeURIComponent(location.hash).match(/^#project\/(.+)$/);
