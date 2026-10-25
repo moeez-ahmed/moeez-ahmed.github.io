@@ -554,10 +554,18 @@ function coverHTML(p) {
   return `<div class="cover" style="--accent:${esc(p.accent || "#6b4428")}"><span class="cover__glyph">${esc(glyph)}</span></div>`;
 }
 
+/** A project's `film` can be one film id or a list of them. */
+function filmsOf(p) {
+  return [].concat(p.film || []).map((id) => filmById.get(id)).filter(Boolean);
+}
+
 function cardHTML(p) {
   const meta = [p.engine, p.platform, p.year].filter(Boolean).join(", ");
-  const film = p.film && filmById.get(p.film);
-  const badge = film
+  const films = filmsOf(p);
+  const film = films[0];
+  const badge = films.length > 1
+    ? `<span class="card__badge card__badge--film">${films.length} films</span>`
+    : film
     ? `<span class="card__badge card__badge--film">Film, ${esc(film.duration || "")}</span>`
     : p.status
     ? `<span class="card__badge">${esc(p.status)}</span>`
@@ -674,7 +682,7 @@ function openProject(id) {
   const p = byId.get(id);
   const modal = $("#project-modal");
   if (!p || !modal) return;
-  const film = p.film && filmById.get(p.film);
+  const films = filmsOf(p);
 
   const media =
     p.preview && !REDUCED
@@ -693,7 +701,10 @@ function openProject(id) {
   ].filter(([, v]) => v);
 
   const actions = [
-    film ? `<button class="btn btn--primary" type="button" data-watch="${esc(film.id)}">Watch the film</button>` : "",
+    ...films.map(
+      (f) =>
+        `<button class="btn btn--primary" type="button" data-watch="${esc(f.id)}">${films.length > 1 ? `Watch ${esc(f.title)}` : "Watch the film"}</button>`
+    ),
     ...(p.links || []).map((l) => `<a class="btn btn--ghost" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`),
   ].join("");
 

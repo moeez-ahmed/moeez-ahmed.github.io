@@ -63,7 +63,7 @@ export const FILMS = [
   {
     id: "kingdomland",
     project: "kingdomland",
-    title: "KingdomLand",
+    title: "KingdomLand (Unreal)",
     native: "",
     src: "assets/video/kingdomland-film.mp4",
     poster: "assets/img/kingdomland-poster.jpg",
@@ -78,6 +78,28 @@ export const FILMS = [
       { t: 137, title: "Trade" },
       { t: 187, title: "Build" },
       { t: 255, title: "Build mode" },
+    ],
+  },
+  {
+    id: "kingdomland-unity",
+    project: "kingdomland",
+    title: "KingdomLand (Unity)",
+    native: "",
+    src: "assets/video/kingdomland-unity-film.mp4",
+    poster: "assets/img/kingdomland-unity-poster.jpg",
+    duration: "5:41",
+    blurb:
+      "The Unity version of KingdomLand, feature by feature: live traffic and NPCs, plot auctions, building, a multiplayer treasure hunt and a basketball mini game.",
+    chapters: [
+      { t: 0, title: "Explore Riyadh in 3D" },
+      { t: 20, title: "Live traffic and NPCs" },
+      { t: 44, title: "Bird's-eye view and teleport" },
+      { t: 74, title: "Buy, sell, auction and rent" },
+      { t: 170, title: "Ownership and construction" },
+      { t: 206, title: "Your house, plot visits and ratings" },
+      { t: 236, title: "Treasure hunt and notifications" },
+      { t: 260, title: "Basketball mini game" },
+      { t: 314, title: "Leaderboards and scoring" },
     ],
   },
   {
@@ -125,11 +147,12 @@ export const FILMS = [
     native: "",
     src: "assets/video/beegames-film.mp4",
     poster: "assets/img/beegames-poster.jpg",
-    duration: "0:32",
-    blurb: "Two of the real-time multiplayer WebGL games from BeeGames, built in Unity.",
+    duration: "0:49",
+    blurb: "Real-time multiplayer WebGL games from BeeGames, built in Unity, shown with two players side by side.",
     chapters: [
-      { t: 0, title: "Rock paper scissors" },
-      { t: 10, title: "Connect Four with live chat" },
+      { t: 0, title: "The lobby" },
+      { t: 6, title: "Rock paper scissors, two players" },
+      { t: 27, title: "Connect Four with live chat" },
     ],
   },
 ];
@@ -190,18 +213,20 @@ export const PROJECTS = [
     platform: "iOS and Android",
     tagline: "Riyadh, rebuilt as a living real estate world.",
     summary:
-      "An interactive 3D real estate world generated from real Riyadh map data, where players buy, sell, rent, maintain and build on land. KingdomLand was built in Unity, Unreal Engine and React Native versions. I led it at Dabbtech and worked on the Unity and Unreal versions; the Unreal Engine version, shown in the film, is the flagship.",
+      "An interactive 3D real estate world generated from real Riyadh map data, where players buy, sell, rent, auction and build on land. KingdomLand was built in Unity, Unreal Engine and React Native versions. I led it at Dabbtech and worked on the Unity and Unreal versions; both have a film.",
     highlights: [
-      "A real Riyadh map streamed with World Partition",
-      "Object pooling for traffic and NPCs, with both static and walking NPCs",
-      "Plots that react to players, and home construction on owned land",
-      "The full plot lifecycle: buying, selling, renting and maintenance",
+      "Unreal: the real Riyadh map streamed with World Partition, with pooled traffic and static and walking NPCs",
+      "Unreal: plots that react to players, home construction, and buying, selling, renting and maintenance",
       "Everything synced across devices through an API-based backend",
+      "Unity: road network and footpath editor tools for designers, saved to CSV and exported to the main project with a spline reader",
+      "Unity: spline-driven traffic and NPC footpaths, with mobile-friendly bridge-only collisions",
+      "Unity: a plot viewing and adjustment tool, and building optimisation with GPU instancing and merged houses",
+      "Unity: teleport, bird's-eye view, plot rating, live notifications, a basketball mini game and a multiplayer treasure hunt",
     ],
-    tech: ["Unreal Engine 5", "Unity", "World Partition", "Object pooling", "REST API backend", "Cross-device sync"],
+    tech: ["Unreal Engine 5", "Unity", "World Partition", "Object pooling", "Splines", "GPU instancing", "UI Toolkit", "REST API backend"],
     card: "assets/img/kingdomland-card.jpg",
     preview: "assets/video/kingdomland-preview.mp4",
-    film: "kingdomland",
+    film: ["kingdomland", "kingdomland-unity"],
     links: [{ label: "Visit kingdomland.net", url: "https://kingdomland.net/" }],
   },
   {
@@ -512,8 +537,8 @@ export const SYSTEMS = [
   {
     name: "Unity and mobile",
     summary: "Unity games shipped to phones and browsers, plus engine-level work when the defaults aren't fast enough.",
-    items: ["Photon multiplayer", "WebGL", "Google Play releases", "Custom ECS", "URP RenderGraph"],
-    proof: ["kick-arena", "tamr-farm", "westland-gangsta", "crazy-battle", "beegames"],
+    items: ["Editor tools for designers", "Splines", "GPU instancing", "UI Toolkit", "Photon multiplayer", "WebGL", "Google Play releases"],
+    proof: ["kingdomland", "kick-arena", "tamr-farm", "westland-gangsta", "crazy-battle", "beegames"],
   },
 ];
 
