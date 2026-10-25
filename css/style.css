@@ -597,3 +597,48 @@ body.is-loading .hero__tagline, body.is-loading .hero__actions { opacity: 0; tra
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
   html { scroll-behavior: auto; }
 }
+
+/* =========================================================
+   The living world behind the page, and the chapter gates
+   ========================================================= */
+.world {
+  position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0;
+  pointer-events: none; opacity: 0; transition: opacity 1.2s var(--ease);
+}
+.world.is-ready { opacity: 1; }
+main { position: relative; z-index: 1; }
+
+/* sections become translucent panels that fade into the world at their edges */
+body.has-world .section {
+  background: linear-gradient(to bottom,
+    rgba(23, 17, 13, 0) 0,
+    rgba(23, 17, 13, 0.88) 160px,
+    rgba(23, 17, 13, 0.88) calc(100% - 160px),
+    rgba(23, 17, 13, 0) 100%);
+}
+body.has-world .footer { position: relative; z-index: 1; background: var(--ink); }
+
+.gate { position: relative; display: grid; place-items: center; padding: 64px var(--pad) 0; pointer-events: none; }
+body.has-world .gate { height: 85vh; height: 85svh; padding: 0 var(--pad); }
+.gate__card {
+  display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center;
+  text-shadow: 0 2px 24px rgba(10, 7, 5, 0.75);
+}
+body.has-world .gate__card {
+  opacity: var(--gate-o, 0);
+  transform: translateY(var(--gate-y, 24px)) scale(var(--gate-s, 0.98));
+  will-change: opacity, transform;
+}
+.gate__num { font-size: 0.875rem; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: var(--sand); }
+.gate__title {
+  display: flex; align-items: center; gap: clamp(16px, 3vw, 36px);
+  font-family: var(--font-display); font-weight: 500; font-size: clamp(2.25rem, 7vw, 5.5rem); line-height: 1.05;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--parchment);
+}
+.gate__title > span:not(.hero__rule) { margin-right: -0.18em; }
+.gate__sub { font-family: var(--font-display); font-style: italic; font-size: clamp(1.25rem, 2.4vw, 1.75rem); color: var(--parchment-dim); }
+@media (max-width: 640px) {
+  body.has-world .gate { height: 65vh; height: 65svh; }
+  .gate__title { letter-spacing: 0.12em; }
+  .gate__title .hero__rule { display: none; }
+}
