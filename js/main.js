@@ -36,6 +36,13 @@ const WEBGL = (() => {
   }
 })();
 
+/**
+ * Sections that respond to left / right / select from the keyboard or a game controller.
+ * Each entry: { left(), right(), a() }, keyed by the section's id.
+ */
+const ZONES = {};
+let startGame = () => false; // set by the title screen; returns true if it started
+
 /** Mount a 3D scene the first time its canvas comes near the viewport. */
 function lazyMount(el, mount, onFail) {
   if (!el) return;
@@ -373,6 +380,18 @@ function initFilms() {
 
   initScrubber();
   selectFilm(FILMS[0].id);
+
+  const stepFilm = (d) => {
+    const i = FILMS.indexOf(currentFilm);
+    const next = FILMS[(i + d + FILMS.length) % FILMS.length];
+    selectFilm(next.id);
+    $(`.tab[data-film="${next.id}"]`, P.tabs)?.focus({ preventScroll: true });
+  };
+  ZONES.films = {
+    left: () => stepFilm(-1),
+    right: () => stepFilm(1),
+    a: () => (P.video.paused ? play() : P.video.pause()),
+  };
 }
 
 function filmDuration() {
@@ -621,6 +640,7 @@ function initWork() {
       const cat = b.dataset.cat;
       $$(".card", grid).forEach((card) => (card.hidden = cat !== "All" && card.dataset.cat !== cat));
       balanceGrid(grid);
+      document.dispatchEvent(new CustomEvent("work:filter", { detail: cat }));
     });
   } else filters.hidden = true;
 
@@ -820,6 +840,14 @@ function initSystems() {
     if (b) setActive(Number(b.dataset.i));
   });
   setActive(0);
+  ZONES.systems = {
+    left: () => setActive((active - 1 + SYSTEMS.length) % SYSTEMS.length),
+    right: () => setActive((active + 1) % SYSTEMS.length),
+    a: () => {
+      const id = (SYSTEMS[active].proof || []).find((pid) => byId.has(pid));
+      if (id) openProject(id);
+    },
+  };
 
   const fail = () => section.classList.add("no-webgl");
   if (!WEBGL) return fail();
@@ -939,6 +967,399 @@ function initJourney() {
 }
 
 /* ---------------------------------------------------------------
+   Level select: projects as a 3D carousel of levels
+   --------------------------------------------------------------- */
+function initLevels() {
+  const wrap = $("#levels");
+  const stage = $("#levels-stage");
+  const info = $("#levels-info");
+  const dots = $("#levels-dots");
+  const prev = $("#levels-prev");
+  const next = $("#levels-next");
+  const grid = $("#work-grid");
+  const featured = PROJECTS.filter((p) => p.featured !== false);
+  if (!wrap || !featured.length) {
+    if (wrap) wrap.hidden = true;
+    if (grid) grid.hidden = false;
+    return;
+  }
+
+  stage.innerHTML = featured
+    .map((p, i) => {
+      const media = p.card ? `<img src="${esc(p.card)}" alt="" loading="lazy" decoding="async">` : coverHTML(p);
+      const preview = p.preview ? `<video muted loop playsinline preload="none" data-src="${esc(p.preview)}" aria-hidden="true"></video>` : "";
+      return `<button class="level" type="button" data-id="${esc(p.id)}" data-cat="${esc(p.category || "")}">
+        <span class="level__media">${media}${preview}</span>
+        <span class="level__shade"></span>
+        <span class="level__tag">Level ${String(i + 1).padStart(2, "0")}</span>
+        <span class="level__title">${esc(p.title)}${p.native ? `<span class="level__native" lang="ar">${esc(p.native)}</span>` : ""}</span>
+      </button>`;
+    })
+    .join("");
+  const cards = $$(".level", stage);
+  let visible = cards.slice();
+  let cur = 0;
+  let inView = false;
+  const touch = matchMedia("(hover: none)").matches;
+  let padConnected = false;
+
+  function hint() {
+    if (padConnected) return `<kbd>D-pad</kbd> browse, <kbd>A</kbd> open`;
+    if (touch) return "Swipe to browse, tap the middle card to open";
+    return `<kbd>&larr;</kbd> <kbd>&rarr;</kbd> browse, <kbd>Enter</kbd> open`;
+  }
+
+  function renderInfo() {
+    const el = visible[cur];
+    if (!el) {
+      info.innerHTML = "";
+      return;
+    }
+    const p = byId.get(el.dataset.id);
+    const films = filmsOf(p);
+    const meta = [p.studio, p.engine, p.platform].filter(Boolean).join(" | ");
+    const store = (p.links || [])[0];
+    info.innerHTML = `
+      <span class="levels__count">Level ${String(cards.indexOf(el) + 1).padStart(2, "0")} of ${String(cards.length).padStart(2, "0")}</span>
+      <h3 class="levels__title">${esc(p.title)}${p.native ? `<span class="card__native" lang="ar">${esc(p.native)}</span>` : ""}</h3>
+      ${meta ? `<p class="levels__meta">${esc(meta)}</p>` : ""}
+      ${p.tagline ? `<p class="levels__tagline">${esc(p.tagline)}</p>` : ""}
+      <div class="levels__actions">
+        <button class="btn btn--primary" type="button" data-level-open>Open case study</button>
+        ${films.length ? `<button class="btn btn--ghost" type="button" data-level-film="${esc(films[0].id)}">${films.length > 1 ? "Watch the films" : "Watch the film"}</button>` : ""}
+        ${store ? `<a class="btn btn--ghost" href="${esc(store.url)}" target="_blank" rel="noopener">${esc(store.label)}</a>` : ""}
+      </div>
+      <p class="levels__hint">${hint()}</p>`;
+  }
+
+  function renderDots() {
+    dots.innerHTML = visible
+      .map((el, i) => `<button class="levels__dot" type="button" aria-label="${esc(byId.get(el.dataset.id).title)}" ${i === cur ? 'aria-current="true"' : ""} data-dot="${i}"></button>`)
+      .join("");
+  }
+
+  function updatePreview() {
+    cards.forEach((el) => {
+      const v = $("video", el);
+      if (!v) return;
+      const play = inView && !REDUCED && el === visible[cur];
+      if (play) {
+        if (!v.getAttribute("src")) v.src = v.dataset.src;
+        v.play().then(() => el.classList.add("is-playing")).catch(() => {});
+      } else if (!v.paused) {
+        v.pause();
+        el.classList.remove("is-playing");
+      }
+    });
+  }
+
+  function layout() {
+    const w = stage.clientWidth || 1;
+    const cardW = cards[0].offsetWidth || 520;
+    const spacing = Math.min(cardW * 0.6, w * 0.34);
+    cards.forEach((el) => (el.style.display = visible.includes(el) ? "" : "none"));
+    visible.forEach((el, i) => {
+      const off = i - cur;
+      const a = Math.abs(off);
+      el.style.transform = `translate(-50%, -50%) translateX(${off * spacing}px) translateZ(${-a * 160}px) rotateY(${-off * 30}deg) scale(${1 - Math.min(a, 3) * 0.05})`;
+      el.style.opacity = a > 2.5 ? "0" : String(1 - a * 0.25);
+      el.style.zIndex = String(100 - a);
+      el.style.pointerEvents = a > 2 ? "none" : "";
+      el.classList.toggle("is-current", off === 0);
+      el.tabIndex = off === 0 ? 0 : -1;
+      el.setAttribute("aria-label", `${byId.get(el.dataset.id).title}, level ${cards.indexOf(el) + 1}${off === 0 ? ", open case study" : ""}`);
+    });
+    prev.disabled = cur <= 0;
+    next.disabled = cur >= visible.length - 1;
+    renderInfo();
+    renderDots();
+    updatePreview();
+  }
+
+  function go(i) {
+    const n = clamp(i, 0, visible.length - 1);
+    if (n === cur) return false;
+    cur = n;
+    layout();
+    return true;
+  }
+  const openCurrent = () => visible[cur] && openProject(visible[cur].dataset.id);
+
+  prev.addEventListener("click", () => go(cur - 1));
+  next.addEventListener("click", () => go(cur + 1));
+  dots.addEventListener("click", (e) => {
+    const d = e.target.closest("[data-dot]");
+    if (d) go(Number(d.dataset.dot));
+  });
+  info.addEventListener("click", (e) => {
+    if (e.target.closest("[data-level-open]")) openCurrent();
+    const f = e.target.closest("[data-level-film]");
+    if (f) {
+      selectFilm(f.dataset.levelFilm);
+      scrollToId("films");
+    }
+  });
+
+  // click a side card to bring it forward, click the middle one to open it; drag or swipe to browse
+  let downX = null;
+  let dragged = false;
+  stage.addEventListener("pointerdown", (e) => {
+    downX = e.clientX;
+    dragged = false;
+  });
+  stage.addEventListener("pointermove", (e) => {
+    if (downX !== null && Math.abs(e.clientX - downX) > 8) dragged = true;
+  });
+  stage.addEventListener("pointerup", (e) => {
+    if (downX !== null && dragged) {
+      const dx = e.clientX - downX;
+      if (Math.abs(dx) > 40) go(cur + (dx < 0 ? 1 : -1));
+    }
+    downX = null;
+  });
+  stage.addEventListener("pointercancel", () => (downX = null));
+  stage.addEventListener("click", (e) => {
+    const el = e.target.closest(".level");
+    if (!el || dragged) return;
+    const i = visible.indexOf(el);
+    if (i === cur) openCurrent();
+    else go(i);
+  });
+  // sideways trackpad swipes
+  let wheelLock = 0;
+  stage.addEventListener(
+    "wheel",
+    (e) => {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) || Math.abs(e.deltaX) < 12) return;
+      e.preventDefault();
+      const now = performance.now();
+      if (now < wheelLock) return;
+      wheelLock = now + 380;
+      go(cur + (e.deltaX > 0 ? 1 : -1));
+    },
+    { passive: false }
+  );
+
+  document.addEventListener("work:filter", (e) => {
+    const cat = e.detail;
+    visible = cards.filter((el) => cat === "All" || el.dataset.cat === cat);
+    cur = 0;
+    layout();
+  });
+  document.addEventListener("controls:pad", (e) => {
+    padConnected = e.detail;
+    renderInfo();
+  });
+  addEventListener("resize", layout);
+  new IntersectionObserver(([entry]) => {
+    inView = entry.isIntersecting;
+    updatePreview();
+  }).observe(stage);
+
+  // level select or grid, remembered for next visit
+  const toggle = $("#work-view");
+  function setView(view) {
+    const levels = view !== "grid";
+    wrap.hidden = !levels;
+    grid.hidden = levels;
+    $$("[data-view]", toggle).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === (levels ? "levels" : "grid"))));
+    if (levels) layout();
+    else balanceGrid(grid);
+    try {
+      localStorage.setItem("ms-work-view", levels ? "levels" : "grid");
+    } catch {}
+  }
+  toggle.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-view]");
+    if (b) setView(b.dataset.view);
+  });
+  let saved = "levels";
+  try {
+    saved = localStorage.getItem("ms-work-view") || "levels";
+  } catch {}
+  setView(saved);
+
+  ZONES.work = {
+    left: () => !wrap.hidden && go(cur - 1),
+    right: () => !wrap.hidden && go(cur + 1),
+    a: () => !wrap.hidden && openCurrent(),
+  };
+}
+
+/* ---------------------------------------------------------------
+   Title screen: "Press any key" dives into the first chapter
+   --------------------------------------------------------------- */
+function initStart() {
+  const btn = $("#hero-start");
+  const label = $("#hero-start-label");
+  if (!btn) return;
+  label.textContent = matchMedia("(hover: none)").matches ? "Tap to start" : "Press any key";
+  let armed = true;
+  const retire = () => {
+    armed = false;
+    document.body.classList.add("is-started");
+  };
+
+  startGame = () => {
+    if (!armed) return false;
+    retire();
+    const flash = $("#start-flash");
+    if (flash && !REDUCED) {
+      flash.classList.remove("is-on");
+      void flash.offsetWidth;
+      flash.classList.add("is-on");
+    }
+    const target = document.body.classList.contains("has-world") ? $(".gate") : $("#films");
+    target?.scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: document.body.classList.contains("has-world") ? "center" : "start" });
+    return true;
+  };
+  btn.addEventListener("click", startGame);
+
+  const IGNORE = ["Tab", "Shift", "Control", "Alt", "Meta", "CapsLock", "Escape", "ContextMenu", "PrintScreen", "NumLock", "ScrollLock"];
+  addEventListener("keydown", (e) => {
+    if (!armed || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (IGNORE.includes(e.key) || /^F\d+$/.test(e.key)) return;
+    if (scrollY > innerHeight * 0.35) return;
+    const ae = document.activeElement;
+    if (ae && ae !== document.body && ae !== btn) return; // never steal keys from links or buttons
+    if ($("#project-modal")?.open || document.body.classList.contains("menu-open") || document.body.classList.contains("is-loading")) return;
+    e.preventDefault();
+    startGame();
+  });
+  // scrolling past the hero retires the prompt
+  addEventListener(
+    "scroll",
+    () => {
+      if (armed && scrollY > innerHeight * 0.6) retire();
+    },
+    { passive: true }
+  );
+}
+
+/* ---------------------------------------------------------------
+   Keyboard arrows and game controllers
+   --------------------------------------------------------------- */
+let toastTimer = 0;
+function toast(html, ms = 5200) {
+  const t = $("#toast");
+  if (!t) return;
+  t.innerHTML = html;
+  t.classList.add("is-on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("is-on"), ms);
+}
+
+/** The registered section that sits across the middle of the screen, if any. */
+function zoneInView() {
+  const mid = innerHeight / 2;
+  for (const [id, z] of Object.entries(ZONES)) {
+    const el = document.getElementById(id);
+    if (!el || el.hidden) continue;
+    const r = el.getBoundingClientRect();
+    if (r.top < mid && r.bottom > mid) return z;
+  }
+  return null;
+}
+
+const SECTION_IDS = ["top", "films", "work", "systems", "about", "journey", "contact"];
+function jumpSection(dir) {
+  const els = SECTION_IDS.map((id) => document.getElementById(id)).filter((el) => el && !el.hidden);
+  const line = innerHeight * 0.4;
+  let i = 0;
+  els.forEach((el, k) => {
+    if (el.getBoundingClientRect().top <= line) i = k;
+  });
+  const target = els[clamp(i + dir, 0, els.length - 1)];
+  target?.scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "start" });
+}
+
+function initControls() {
+  const modal = $("#project-modal");
+
+  // arrow keys browse whatever section is on screen (films, levels, skill rings)
+  addEventListener("keydown", (e) => {
+    if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || modal?.open) return;
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    const ae = document.activeElement;
+    const free = !ae || ae === document.body || ae.closest?.("#levels");
+    if (!free) return;
+    const z = zoneInView();
+    if (!z) return;
+    e.preventDefault();
+    e.key === "ArrowLeft" ? z.left() : z.right();
+  });
+
+  // game controllers (standard mapping: A=0, B=1, Start=9, D-pad 12-15)
+  if (!("getGamepads" in navigator)) return;
+  let polling = false;
+  const held = {};
+  const REPEAT_DELAY = 380;
+  const REPEAT_RATE = 160;
+
+  function press(name, down, now, fire, repeat = false) {
+    const h = held[name] || (held[name] = { down: false, next: 0 });
+    if (down && !h.down) {
+      h.down = true;
+      h.next = now + REPEAT_DELAY;
+      fire();
+    } else if (down && repeat && now >= h.next) {
+      h.next = now + REPEAT_RATE;
+      fire();
+    } else if (!down) h.down = false;
+  }
+
+  function poll(now) {
+    const pad = [...navigator.getGamepads()].find(Boolean);
+    if (!pad) {
+      polling = false;
+      return;
+    }
+    const b = (i) => !!pad.buttons[i]?.pressed;
+    const ax = pad.axes[0] || 0;
+    const ay = pad.axes[1] || 0;
+
+    // left stick scrolls the page
+    if (Math.abs(ay) > 0.18 && !modal?.open) scrollBy(0, Math.sign(ay) * ay * ay * 26);
+    if (modal?.open && Math.abs(ay) > 0.18) modal.scrollTop += Math.sign(ay) * ay * ay * 18;
+
+    press("a", b(0), now, () => {
+      if (modal?.open) return;
+      if (startGame()) return;
+      zoneInView()?.a();
+    });
+    press("b", b(1), now, () => {
+      if (modal?.open) modal.close();
+    });
+    press("start", b(9), now, () => {
+      if (!startGame()) scrollTo({ top: 0, behavior: REDUCED ? "auto" : "smooth" });
+    });
+    press("up", b(12), now, () => !modal?.open && jumpSection(-1), true);
+    press("down", b(13), now, () => !modal?.open && jumpSection(1), true);
+    press("left", b(14) || ax < -0.6, now, () => !modal?.open && zoneInView()?.left(), true);
+    press("right", b(15) || ax > 0.6, now, () => !modal?.open && zoneInView()?.right(), true);
+
+    requestAnimationFrame(poll);
+  }
+  function startPolling() {
+    if (polling) return;
+    polling = true;
+    requestAnimationFrame(poll);
+  }
+
+  addEventListener("gamepadconnected", () => {
+    toast("<strong>Controller connected.</strong> Left stick scrolls, D-pad up and down jumps between sections, left and right browses, A selects, B goes back.", 7000);
+    document.dispatchEvent(new CustomEvent("controls:pad", { detail: true }));
+    startPolling();
+  });
+  addEventListener("gamepaddisconnected", () => {
+    if (![...navigator.getGamepads()].some(Boolean)) {
+      toast("Controller disconnected.", 2500);
+      document.dispatchEvent(new CustomEvent("controls:pad", { detail: false }));
+    }
+  });
+}
+
+/* ---------------------------------------------------------------
    The living world: one 3D desert behind the page, flown by scrolling
    --------------------------------------------------------------- */
 function initWorld() {
@@ -1031,12 +1452,15 @@ safely("nav", initNav);
 safely("films", initFilms);
 safely("hero", initHero);
 safely("work", initWork);
+safely("levels", initLevels);
 safely("modal", initModal);
 safely("systems", initSystems);
 safely("about", initAbout);
 safely("journey", initJourney);
 safely("contact", initContact);
 safely("world", initWorld);
+safely("start", initStart);
+safely("controls", initControls);
 
 // deep link: /#project/kingdomland opens that case study
 const deep = decodeURIComponent(location.hash).match(/^#project\/(.+)$/);
