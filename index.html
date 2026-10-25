@@ -64,6 +64,7 @@
           <a class="btn btn--primary" href="#films" id="hero-watch">Watch WAHM</a>
           <a class="btn btn--ghost" href="#work">See the work</a>
         </div>
+        <button class="hero__start" id="hero-start" type="button"><span id="hero-start-label">Press any key</span></button>
       </div>
       <button class="hero__motion" id="hero-motion" type="button" aria-pressed="false">Pause background</button>
     </section>
@@ -132,9 +133,22 @@
       <div class="wrap">
         <div class="section__head">
           <h2 class="section__title" id="work-title">Selected work</h2>
-          <div class="chips" id="work-filters" role="group" aria-label="Filter projects"></div>
+          <div class="work__tools">
+            <div class="chips" id="work-filters" role="group" aria-label="Filter projects"></div>
+            <div class="view-toggle" id="work-view" role="group" aria-label="Choose a view">
+              <button class="view-toggle__btn" type="button" aria-pressed="true" data-view="levels">Level select</button>
+              <button class="view-toggle__btn" type="button" aria-pressed="false" data-view="grid">Grid</button>
+            </div>
+          </div>
         </div>
-        <div class="grid" id="work-grid"></div>
+        <div class="levels" id="levels" role="region" aria-roledescription="carousel" aria-label="Projects, level select">
+          <div class="levels__stage" id="levels-stage"></div>
+          <button class="levels__nav levels__nav--prev" id="levels-prev" type="button" aria-label="Previous project"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <button class="levels__nav levels__nav--next" id="levels-next" type="button" aria-label="Next project"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+          <div class="levels__dots" id="levels-dots" role="group" aria-label="Choose a level"></div>
+          <div class="levels__info" id="levels-info" aria-live="polite"></div>
+        </div>
+        <div class="grid" id="work-grid" hidden></div>
         <div class="earlier" id="earlier">
           <h3 class="earlier__title">Earlier work</h3>
           <ul class="earlier__list" id="earlier-list"></ul>
@@ -226,6 +240,9 @@
       <a href="#top">Back to top</a>
     </div>
   </footer>
+
+  <div class="start-flash" id="start-flash" aria-hidden="true"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <dialog class="modal" id="project-modal" aria-labelledby="modal-title">
     <div class="modal__inner" id="modal-inner"></div>
