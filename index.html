@@ -48,9 +48,11 @@
     </nav>
   </header>
 
+  <canvas class="world" id="world" aria-hidden="true"></canvas>
+
   <main id="main">
     <!-- HERO -->
-    <section class="hero" id="top" aria-label="Introduction">
+    <section class="hero" id="top" aria-label="Introduction" data-world-shot="sky">
       <video class="hero__video" id="hero-video" muted loop playsinline preload="auto" aria-hidden="true"></video>
       <div class="hero__shade" aria-hidden="true"></div>
       <canvas class="hero__sand" id="hero-sand" aria-hidden="true"></canvas>
@@ -67,7 +69,15 @@
     </section>
 
     <!-- FILMS -->
-    <section class="section films" id="films" aria-labelledby="films-title">
+    <div class="gate" data-world-shot="settlement" aria-hidden="true">
+      <div class="gate__card">
+        <span class="gate__num">Chapter I</span>
+        <span class="gate__title"><span class="hero__rule"></span><span>The films</span><span class="hero__rule"></span></span>
+        <span class="gate__sub">Worlds in motion</span>
+      </div>
+    </div>
+
+    <section class="section films" id="films" aria-labelledby="films-title" data-world-shot="settlement-hold">
       <div class="wrap">
         <div class="section__head">
           <h2 class="section__title" id="films-title">Films</h2>
@@ -110,7 +120,15 @@
     </section>
 
     <!-- WORK -->
-    <section class="section work" id="work" aria-labelledby="work-title">
+    <div class="gate" data-world-shot="tower" aria-hidden="true">
+      <div class="gate__card">
+        <span class="gate__num">Chapter II</span>
+        <span class="gate__title"><span class="hero__rule"></span><span>The work</span><span class="hero__rule"></span></span>
+        <span class="gate__sub">Every world I&rsquo;ve shipped</span>
+      </div>
+    </div>
+
+    <section class="section work" id="work" aria-labelledby="work-title" data-world-shot="tower-hold">
       <div class="wrap">
         <div class="section__head">
           <h2 class="section__title" id="work-title">Selected work</h2>
@@ -125,7 +143,15 @@
     </section>
 
     <!-- SYSTEMS -->
-    <section class="section systems" id="systems" aria-labelledby="systems-title" data-3d>
+    <div class="gate" data-world-shot="night" aria-hidden="true">
+      <div class="gate__card">
+        <span class="gate__num">Chapter III</span>
+        <span class="gate__title"><span class="hero__rule"></span><span>The systems</span><span class="hero__rule"></span></span>
+        <span class="gate__sub">What holds them together</span>
+      </div>
+    </div>
+
+    <section class="section systems" id="systems" aria-labelledby="systems-title" data-3d data-world-shot="night-hold">
       <div class="wrap systems__layout">
         <div class="systems__text">
           <h2 class="section__title" id="systems-title">Systems I build</h2>
@@ -140,7 +166,15 @@
     </section>
 
     <!-- ABOUT -->
-    <section class="section about" id="about" aria-labelledby="about-title" data-3d>
+    <div class="gate" data-world-shot="oasis" aria-hidden="true">
+      <div class="gate__card">
+        <span class="gate__num">Chapter IV</span>
+        <span class="gate__title"><span class="hero__rule"></span><span>The maker</span><span class="hero__rule"></span></span>
+        <span class="gate__sub">Who builds them</span>
+      </div>
+    </div>
+
+    <section class="section about" id="about" aria-labelledby="about-title" data-3d data-world-shot="oasis-hold">
       <div class="wrap about__layout">
         <div class="about__text">
           <h2 class="section__title" id="about-title">About</h2>
@@ -158,7 +192,15 @@
     </section>
 
     <!-- JOURNEY -->
-    <section class="section journey" id="journey" aria-labelledby="journey-title">
+    <div class="gate" data-world-shot="caravan" aria-hidden="true">
+      <div class="gate__card">
+        <span class="gate__num">Chapter V</span>
+        <span class="gate__title"><span class="hero__rule"></span><span>The journey</span><span class="hero__rule"></span></span>
+        <span class="gate__sub">Every road that led here</span>
+      </div>
+    </div>
+
+    <section class="section journey" id="journey" aria-labelledby="journey-title" data-world-shot="caravan-hold">
       <div class="wrap">
         <div class="section__head">
           <h2 class="section__title" id="journey-title">Journey</h2>
@@ -168,7 +210,7 @@
     </section>
 
     <!-- CONTACT -->
-    <section class="contact" id="contact" aria-labelledby="contact-title">
+    <section class="contact" id="contact" aria-labelledby="contact-title" data-world-shot="finale">
       <div class="contact__bg" aria-hidden="true"></div>
       <div class="wrap contact__inner">
         <h2 class="contact__title" id="contact-title">Building something ambitious?<br>Let's talk.</h2>
