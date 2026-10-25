@@ -1,4 +1,4 @@
-import { SITE, FILMS, PROJECTS, SYSTEMS, EXPERIENCE } from "./data.js";
+import { SITE, FILMS, PROJECTS, SYSTEMS, EXPERIENCE, ACHIEVEMENTS } from "./data.js";
 
 /* ---------------------------------------------------------------
    Helpers
@@ -34,6 +34,89 @@ const WEBGL = (() => {
   } catch {
     return false;
   }
+})();
+
+/* ---------------------------------------------------------------
+   Achievements: unlock as visitors explore. Saved in their browser.
+   --------------------------------------------------------------- */
+const TROPHY_SVG =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v3a5 5 0 0 1-10 0V4zM5 5H3v2a4 4 0 0 0 4 4M19 5h2v2a4 4 0 0 1-4 4M12 12v4M8.5 20h7M10 16h4l.5 4h-5z"/></svg>';
+const ACH = (() => {
+  const KEY = "ms-achievements";
+  const PKEY = "ms-progress";
+  const list = ACHIEVEMENTS || [];
+  const byKey = new Map(list.map((a) => [a.id, a]));
+  let got = new Set();
+  let prog = {};
+  try {
+    got = new Set(JSON.parse(localStorage.getItem(KEY) || "[]").filter((id) => byKey.has(id)));
+    prog = JSON.parse(localStorage.getItem(PKEY) || "{}") || {};
+  } catch {}
+  const save = () => {
+    try {
+      localStorage.setItem(KEY, JSON.stringify([...got]));
+      localStorage.setItem(PKEY, JSON.stringify(prog));
+    } catch {}
+  };
+  const queue = [];
+  let showing = false;
+
+  function refreshCount() {
+    const c = document.getElementById("trophy-count");
+    const b = document.getElementById("trophy-btn");
+    if (c) c.textContent = `${got.size}/${list.length}`;
+    if (b) b.setAttribute("aria-label", `Achievements, ${got.size} of ${list.length} unlocked`);
+  }
+  function next() {
+    const box = document.getElementById("unlocks");
+    if (showing || !queue.length || !box) return;
+    if (document.body.classList.contains("is-loading")) {
+      setTimeout(next, 700);
+      return;
+    }
+    showing = true;
+    const a = byKey.get(queue.shift());
+    const el = document.createElement("div");
+    el.className = `unlock${a.id === "platinum" ? " unlock--platinum" : ""}`;
+    el.innerHTML = `<span class="unlock__icon">${TROPHY_SVG}</span><span class="unlock__text"><span class="unlock__kicker">Achievement unlocked</span><strong>${esc(a.title)}</strong><span class="unlock__desc">${esc(a.desc)}</span></span>`;
+    box.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("is-on"));
+    document.getElementById("trophy-btn")?.classList.add("is-bump");
+    setTimeout(() => document.getElementById("trophy-btn")?.classList.remove("is-bump"), 700);
+    setTimeout(() => {
+      el.classList.remove("is-on");
+      setTimeout(() => {
+        el.remove();
+        showing = false;
+        next();
+      }, 450);
+    }, 3800);
+  }
+  function unlock(id) {
+    if (got.has(id) || !byKey.has(id)) return;
+    got.add(id);
+    save();
+    refreshCount();
+    queue.push(id);
+    next();
+    const rest = list.filter((a) => a.id !== "platinum");
+    if (id !== "platinum" && rest.length && rest.every((a) => got.has(a.id))) unlock("platinum");
+  }
+  /** Count distinct things (films played, projects opened...) and unlock at a goal. */
+  function track(key, value, goal, id) {
+    const set = new Set(prog[key] || []);
+    set.add(String(value));
+    prog[key] = [...set];
+    save();
+    if (set.size >= goal) unlock(id);
+  }
+  function reset() {
+    got.clear();
+    prog = {};
+    save();
+    refreshCount();
+  }
+  return { list, unlock, track, reset, has: (id) => got.has(id), refreshCount };
 })();
 
 /**
@@ -353,10 +436,15 @@ function initFilms() {
   P.caseBtn.addEventListener("click", () => currentFilm?.project && openProject(currentFilm.project));
   P.chapters.addEventListener("click", (e) => {
     const b = e.target.closest("[data-t]");
-    if (b) seekTo(Number(b.dataset.t), true);
+    if (b) {
+      seekTo(Number(b.dataset.t), true);
+      ACH.unlock("cut");
+    }
   });
 
   v.addEventListener("play", () => {
+    ACH.unlock("reel");
+    if (currentFilm) ACH.track("films", currentFilm.id, 3, "cinephile");
     P.root.classList.add("is-playing");
     P.pp.setAttribute("aria-label", "Pause");
     P.cover.classList.add("is-hidden");
@@ -761,6 +849,8 @@ function openProject(id) {
   }
   modal.scrollTop = 0;
   history.replaceState(null, "", `#project/${encodeURIComponent(p.id)}`);
+  ACH.unlock("level");
+  ACH.track("projects", p.id, 6, "completionist");
 }
 
 function initModal() {
@@ -804,6 +894,58 @@ function initSystems() {
       `<li><button class="sys-item" type="button" aria-pressed="false" data-i="${i}"><span class="sys-item__dot" aria-hidden="true"></span>${esc(s.name)}</button></li>`
   ).join("");
 
+  // the skill tree: the same systems drawn as an RPG talent tree
+  const tree = $("#skilltree");
+  const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+  if (tree) {
+    tree.innerHTML = `
+      <div class="skilltree__root">
+        <span class="skilltree__crest">${esc(SITE.initials || "")}</span>
+        <span class="skilltree__name">${esc(SITE.name)}</span>
+        <span class="skilltree__class">Gameplay architect, Unreal Engine and Unity</span>
+      </div>
+      <div class="skilltree__branches" style="--n:${SYSTEMS.length}">
+        ${SYSTEMS.map(
+          (s, i) => `<div class="branch">
+            <button class="branch__head" type="button" aria-pressed="false" data-branch="${i}">
+              <span class="branch__num">${ROMAN[i] || i + 1}</span>
+              <span class="branch__name">${esc(s.name)}</span>
+            </button>
+            <ul class="branch__nodes">${(s.items || []).map((t) => `<li class="node"><span class="node__gem" aria-hidden="true"></span><span class="node__label">${esc(t)}</span></li>`).join("")}</ul>
+          </div>`
+        ).join("")}
+      </div>
+      <div class="systems__panel skilltree__panel" id="skilltree-panel" aria-live="polite"></div>`;
+    tree.addEventListener("click", (e) => {
+      const h = e.target.closest("[data-branch]");
+      if (h) setActive(Number(h.dataset.branch));
+    });
+    tree.addEventListener("pointerover", (e) => {
+      if (e.pointerType !== "mouse") return;
+      const h = e.target.closest(".branch");
+      if (h) setActive(Number($(".branch__head", h).dataset.branch));
+    });
+    const toggle = $("#systems-view");
+    const setView = (v) => {
+      const isTree = v === "tree";
+      section.classList.toggle("is-tree", isTree);
+      tree.hidden = !isTree;
+      $$("[data-view]", toggle).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === (isTree ? "tree" : "astrolabe"))));
+      try {
+        localStorage.setItem("ms-systems-view", isTree ? "tree" : "astrolabe");
+      } catch {}
+    };
+    toggle?.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-view]");
+      if (b) setView(b.dataset.view);
+    });
+    let saved = "astrolabe";
+    try {
+      saved = localStorage.getItem("ms-systems-view") || "astrolabe";
+    } catch {}
+    setView(saved);
+  }
+
   let astro = null;
   let active = -1;
   function setActive(i) {
@@ -815,7 +957,7 @@ function initSystems() {
     });
     const s = SYSTEMS[i];
     const proof = (s.proof || []).map((id) => byId.get(id)).filter(Boolean);
-    panel.innerHTML = `<h3>${esc(s.name)}</h3><p>${esc(s.summary)}</p>
+    const html = `<h3>${esc(s.name)}</h3><p>${esc(s.summary)}</p>
       <div class="tags">${(s.items || []).map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</div>
       ${
         proof.length
@@ -824,7 +966,15 @@ function initSystems() {
               .join("")}</p>`
           : ""
       }`;
+    panel.innerHTML = html;
+    const treePanel = $("#skilltree-panel");
+    if (treePanel) treePanel.innerHTML = html;
+    $$(".branch", tree).forEach((b, j) => {
+      b.classList.toggle("is-active", j === i);
+      $(".branch__head", b)?.setAttribute("aria-pressed", String(j === i));
+    });
     astro?.setActive(i);
+    ACH.track("rings", i, SYSTEMS.length, "skills");
   }
   list.addEventListener("click", (e) => {
     const b = e.target.closest("[data-i]");
@@ -903,7 +1053,10 @@ function initAbout() {
         mountDiorama(canvas, {
           still: REDUCED,
           landmarks,
-          onSelect: (id) => openProject(id),
+          onSelect: (id) => {
+            if (id === "caravan-of-the-sands") ACH.unlock("caravan");
+            openProject(id);
+          },
           onHover(info) {
             if (!info) {
               tip.hidden = true;
@@ -928,12 +1081,15 @@ function initJourney() {
   const fill = $("#timeline-fill");
   tl.insertAdjacentHTML(
     "beforeend",
-    EXPERIENCE.map((e) => {
+    EXPERIENCE.map((e, i) => {
       const when = e.end && e.end !== e.start ? `${esc(e.start)}–${esc(e.end)}` : esc(e.start);
       const org = e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener">${esc(e.org)}</a>` : esc(e.org);
-      return `<li class="stop">
+      const active = i === 0;
+      const quest = String(EXPERIENCE.length - i).padStart(2, "0");
+      return `<li class="stop${active ? " stop--active" : ""}">
         <div class="stop__when">${when}</div>
         <div class="stop__body">
+          <p class="stop__quest"><span>Quest ${quest}</span><span class="stop__badge">${active ? "Active quest" : "Complete"}</span></p>
           <h3 class="stop__role">${esc(e.role)}</h3>
           <p class="stop__org">${org}</p>
           ${e.note ? `<p class="stop__note">${esc(e.note)}</p>` : ""}
@@ -1203,6 +1359,7 @@ function initStart() {
   startGame = () => {
     if (!armed) return false;
     retire();
+    ACH.unlock("start");
     const flash = $("#start-flash");
     if (flash && !REDUCED) {
       flash.classList.remove("is-on");
@@ -1347,6 +1504,7 @@ function initControls() {
   }
 
   addEventListener("gamepadconnected", () => {
+    ACH.unlock("pad");
     toast("<strong>Controller connected.</strong> Left stick scrolls, D-pad up and down jumps between sections, left and right browses, A selects, B goes back.", 7000);
     document.dispatchEvent(new CustomEvent("controls:pad", { detail: true }));
     startPolling();
@@ -1387,11 +1545,50 @@ function initWorld() {
     }
   };
 
+  // passing through each chapter counts towards "World traveller"
+  const gateSeen = new IntersectionObserver(
+    (entries) => entries.forEach((en) => en.isIntersecting && ACH.track("gates", gates.indexOf(en.target), gates.length, "explorer")),
+    { threshold: 0.55 }
+  );
+  gates.forEach((g) => gateSeen.observe(g));
+
   if (!canvas || !WEBGL || REDUCED) return; // gates stay as simple static chapter titles
   document.body.classList.add("has-world");
   addEventListener("scroll", onScroll, { passive: true });
   addEventListener("resize", onScroll);
   updateGates();
+
+  // chapter magnet: if the visitor stops scrolling partway through a chapter card, glide it to the centre.
+  // Long sections are never snapped, and only the visitor's own scrolling triggers it.
+  let armedAt = 0; // set by the visitor's own wheel, touch or key input; used once per settle
+  let idle = 0;
+  let gliding = false;
+  ["wheel", "touchmove", "keydown"].forEach((t) => addEventListener(t, () => (armedAt = performance.now()), { passive: true }));
+  function magnet() {
+    const fresh = armedAt && performance.now() - armedAt < 4000;
+    armedAt = 0;
+    if (!fresh || $("#project-modal")?.open || $("#trophies")?.open) return;
+    const mid = innerHeight / 2;
+    for (const g of gates) {
+      const r = g.getBoundingClientRect();
+      const d = r.top + r.height / 2 - mid;
+      if (Math.abs(d) > 10 && Math.abs(d) < innerHeight * 0.3) {
+        gliding = true;
+        scrollBy({ top: d, behavior: "smooth" });
+        setTimeout(() => (gliding = false), 800);
+        return;
+      }
+    }
+  }
+  addEventListener(
+    "scroll",
+    () => {
+      if (gliding) return;
+      clearTimeout(idle);
+      idle = setTimeout(magnet, 180);
+    },
+    { passive: true }
+  );
 
   let anchors = [];
   const measure = () => {
@@ -1421,6 +1618,50 @@ function initWorld() {
 }
 
 /* ---------------------------------------------------------------
+   Trophy room: every achievement, locked and unlocked
+   --------------------------------------------------------------- */
+function initTrophies() {
+  const btn = $("#trophy-btn");
+  const dlg = $("#trophies");
+  const inner = $("#trophies-inner");
+  if (!btn || !dlg) return;
+  if (!ACH.list.length) {
+    btn.hidden = true;
+    return;
+  }
+  ACH.refreshCount();
+  function render() {
+    const done = ACH.list.filter((a) => ACH.has(a.id)).length;
+    const pct = Math.round((done / ACH.list.length) * 100);
+    inner.innerHTML = `
+      <button class="icon-btn modal__close" type="button" aria-label="Close" data-close><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <h2 class="trophies__title" id="trophies-title">Achievements</h2>
+      <p class="trophies__lede">${done} of ${ACH.list.length} unlocked. Explore the site to find the rest.</p>
+      <div class="trophies__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></div>
+      <ul class="trophies__list">
+        ${ACH.list
+          .map((a) => {
+            const on = ACH.has(a.id);
+            return `<li class="trophy${on ? " is-on" : ""}"><span class="trophy__icon">${TROPHY_SVG}</span><span><strong>${esc(a.title)}</strong><span class="trophy__desc">${on ? esc(a.desc) : "Locked: " + esc(a.desc)}</span></span></li>`;
+          })
+          .join("")}
+      </ul>
+      <button class="link-btn trophies__reset" type="button" data-reset>Reset progress</button>`;
+  }
+  btn.addEventListener("click", () => {
+    render();
+    dlg.showModal ? dlg.showModal() : dlg.setAttribute("open", "");
+  });
+  dlg.addEventListener("click", (e) => {
+    if (e.target === dlg || e.target.closest("[data-close]")) dlg.close();
+    if (e.target.closest("[data-reset]")) {
+      ACH.reset();
+      render();
+    }
+  });
+}
+
+/* ---------------------------------------------------------------
    Contact
    --------------------------------------------------------------- */
 function initContact() {
@@ -1431,6 +1672,13 @@ function initContact() {
   ].join("");
   const box = $("#contact-actions");
   box.innerHTML = actions;
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("a[href]");
+    if (!a) return;
+    const href = a.getAttribute("href") || "";
+    if (SITE.cv && href === SITE.cv) ACH.unlock("recruiter");
+    else if (href.startsWith("mailto:") || (SITE.linkedin && href === SITE.linkedin)) ACH.unlock("contact");
+  });
   if (SITE.email)
     box.insertAdjacentHTML("afterend", `<p class="contact__email"><a href="mailto:${esc(SITE.email)}">${esc(SITE.email)}</a></p>`);
 }
@@ -1461,6 +1709,7 @@ safely("contact", initContact);
 safely("world", initWorld);
 safely("start", initStart);
 safely("controls", initControls);
+safely("trophies", initTrophies);
 
 // deep link: /#project/kingdomland opens that case study
 const deep = decodeURIComponent(location.hash).match(/^#project\/(.+)$/);

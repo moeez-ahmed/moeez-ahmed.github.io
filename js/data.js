@@ -618,3 +618,24 @@ export const EXPERIENCE = [
     points: [],
   },
 ];
+
+/* ---------------------------------------------------------------------
+   ACHIEVEMENTS — unlock as visitors explore the site.
+   Titles and descriptions can be edited freely; the ids are what the
+   site listens for, so keep those as they are.
+   --------------------------------------------------------------------- */
+export const ACHIEVEMENTS = [
+  { id: "start", title: "Press start", desc: "Started from the title screen." },
+  { id: "reel", title: "First reel", desc: "Played a gameplay film." },
+  { id: "cut", title: "Director's cut", desc: "Jumped to a chapter in a film." },
+  { id: "cinephile", title: "Cinephile", desc: "Played three different films." },
+  { id: "level", title: "Level up", desc: "Opened a case study." },
+  { id: "completionist", title: "Completionist", desc: "Opened six different case studies." },
+  { id: "skills", title: "Skill check", desc: "Looked at every branch of the skill set." },
+  { id: "caravan", title: "Found the caravan", desc: "Found the caravan on the desert island." },
+  { id: "explorer", title: "World traveller", desc: "Passed through all five chapters." },
+  { id: "pad", title: "Player two", desc: "Browsed with a game controller." },
+  { id: "recruiter", title: "Recruiter mode", desc: "Downloaded the CV." },
+  { id: "contact", title: "Let's talk", desc: "Reached out by email or LinkedIn." },
+  { id: "platinum", title: "Platinum", desc: "Unlocked every other achievement." },
+];
