@@ -754,3 +754,146 @@ body.is-loading .hero__start { opacity: 0; }
 /* side cards of the level select may reach the screen edges, but never cause sideways scrolling */
 .section.work { overflow: hidden; }
 @supports (overflow: clip) { .section.work { overflow: visible; overflow-x: clip; } }
+
+/* =========================================================
+   Achievements: nav trophy, unlock pop-ups, trophy room
+   ========================================================= */
+.nav { justify-content: flex-start; gap: 10px; }
+.nav__brand { margin-right: auto; }
+.nav nav { order: 1; }
+.nav__trophy { order: 2; }
+.nav__trophy {
+  display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px; margin-left: 6px;
+  border-radius: 999px; border: 1px solid var(--line-strong); background: rgba(23, 17, 13, 0.35);
+  color: var(--parchment); font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer;
+  transition: border-color 0.2s, transform 0.3s var(--ease);
+}
+.nav__trophy svg, .unlock__icon svg, .trophy__icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+.nav__trophy svg { color: var(--sand); }
+.nav__trophy:hover { border-color: var(--sand); }
+.nav__trophy.is-bump { transform: scale(1.12); border-color: var(--ember); }
+@media (max-width: 860px) {
+  .nav__trophy { order: 1; margin-left: 0; }
+  .nav__toggle { order: 2; }
+  .nav nav { order: 3; }
+}
+
+.unlocks { position: fixed; top: calc(var(--nav-h) + 12px + env(safe-area-inset-top, 0px)); right: 16px; z-index: 170; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.unlock {
+  display: flex; align-items: center; gap: 14px; width: min(340px, calc(100vw - 32px));
+  padding: 12px 16px 12px 12px; border-radius: 10px;
+  background: rgba(23, 17, 13, 0.94); border: 1px solid rgba(207, 162, 102, 0.45);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5), 0 0 30px -10px rgba(224, 120, 47, 0.5);
+  opacity: 0; transform: translateX(24px); transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+}
+.unlock.is-on { opacity: 1; transform: none; }
+.unlock__icon { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--ember); color: var(--ink); }
+.unlock__icon svg { width: 22px; height: 22px; stroke-width: 1.9; }
+.unlock--platinum .unlock__icon { background: linear-gradient(135deg, #f4e7cf, #b9c6cc); }
+.unlock__text { display: flex; flex-direction: column; line-height: 1.3; }
+.unlock__kicker { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sand); }
+.unlock__text strong { font-size: 1rem; color: var(--parchment); }
+.unlock__desc { font-size: 0.8125rem; color: var(--parchment-dim); }
+
+.trophies {
+  width: min(560px, calc(100% - 24px)); max-height: calc(100% - 24px); padding: 0; margin: auto;
+  background: var(--ink-2); color: var(--parchment); border: 1px solid var(--line-strong); border-radius: 12px; overflow: auto;
+}
+.trophies::backdrop { background: rgba(10, 7, 5, 0.78); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.trophies[open] { animation: modal-in 0.35s var(--ease); }
+.trophies__inner { position: relative; padding: 28px clamp(20px, 4vw, 32px) 24px; }
+.trophies__title { font-family: var(--font-display); font-size: 2.25rem; line-height: 1.1; }
+.trophies__lede { margin: 8px 0 14px; color: var(--parchment-dim); }
+.trophies__bar { height: 6px; border-radius: 3px; background: rgba(236, 225, 203, 0.12); overflow: hidden; margin-bottom: 18px; }
+.trophies__bar span { display: block; height: 100%; background: linear-gradient(to right, var(--sand), var(--ember)); }
+.trophies__list { display: grid; gap: 8px; }
+.trophy { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); opacity: 0.55; }
+.trophy.is-on { opacity: 1; border-color: rgba(207, 162, 102, 0.4); background: rgba(224, 120, 47, 0.06); }
+.trophy__icon { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--ink-3); color: var(--muted); }
+.trophy.is-on .trophy__icon { background: var(--ember); color: var(--ink); }
+.trophy strong { display: block; font-size: 0.9375rem; }
+.trophy__desc { font-size: 0.8125rem; color: var(--parchment-dim); }
+.trophies__reset { margin-top: 16px; font-size: 0.8125rem; }
+
+/* =========================================================
+   Skill tree view of the systems
+   ========================================================= */
+.systems__toggle { margin-top: 20px; }
+.systems.is-tree .systems__layout { grid-template-columns: minmax(0, 1fr); }
+.systems.is-tree .systems__list, .systems.is-tree .systems__visual { display: none; }
+.skilltree[hidden] { display: none; }
+.skilltree { margin-top: 40px; }
+.skilltree__root { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.skilltree__crest {
+  display: grid; place-items: center; width: 74px; height: 74px; border-radius: 50%;
+  font-family: var(--font-display); font-size: 1.75rem; font-weight: 600; letter-spacing: 0.08em; color: var(--ink);
+  background: radial-gradient(circle at 35% 30%, #f6c28a, var(--ember) 60%, #a34f1c);
+  box-shadow: 0 0 0 4px rgba(23, 17, 13, 0.9), 0 0 0 5px var(--sand), 0 0 40px rgba(224, 120, 47, 0.45);
+}
+.skilltree__name { margin-top: 8px; font-family: var(--font-display); font-size: 1.5rem; }
+.skilltree__class { font-size: 0.875rem; color: var(--sand); }
+.skilltree__branches {
+  position: relative; display: grid; grid-template-columns: repeat(var(--n, 6), minmax(0, 1fr)); gap: 14px;
+  margin-top: 30px; padding-top: 30px;
+}
+/* trunk and crossbar joining the root to each branch */
+.skilltree__branches::before { content: ""; position: absolute; left: 50%; top: -30px; height: 30px; width: 2px; background: var(--line-strong); }
+.skilltree__branches::after {
+  content: ""; position: absolute; top: 0; height: 2px; background: var(--line-strong);
+  left: calc(100% / (var(--n, 6) * 2)); right: calc(100% / (var(--n, 6) * 2));
+}
+.branch { position: relative; display: flex; flex-direction: column; align-items: center; }
+.branch::before { content: ""; position: absolute; top: -30px; left: 50%; width: 2px; height: 30px; background: var(--line-strong); }
+.branch__head {
+  position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%;
+  padding: 0; background: none; border: 0; cursor: pointer; color: var(--parchment-dim); text-align: center;
+}
+.branch__num {
+  display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%;
+  font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; color: var(--sand);
+  background: var(--ink-2); border: 2px solid var(--line-strong); transition: border-color 0.3s, box-shadow 0.3s, color 0.3s, background-color 0.3s;
+}
+.branch__name { font-size: 0.875rem; font-weight: 600; line-height: 1.3; min-height: 2.6em; }
+.branch__nodes { position: relative; display: flex; flex-direction: column; gap: 12px; margin-top: 12px; width: 100%; }
+.branch__nodes::before { content: ""; position: absolute; left: 50%; top: -10px; bottom: 10px; width: 2px; transform: translateX(-50%); background: var(--line); }
+.node { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.node__gem {
+  width: 14px; height: 14px; transform: rotate(45deg); border: 2px solid var(--line-strong); background: var(--ink-2);
+  transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+.node__label { position: relative; font-size: 0.8125rem; line-height: 1.3; color: var(--muted); padding: 2px 6px; border-radius: 4px; background: rgba(23, 17, 13, 0.85); transition: color 0.3s; }
+.branch.is-active .branch__num { color: var(--ink); background: var(--ember); border-color: var(--ember); box-shadow: 0 0 24px rgba(224, 120, 47, 0.6); }
+.branch.is-active .branch__name { color: var(--parchment); }
+.branch.is-active .node__gem { background: var(--ember); border-color: var(--ember-hi); box-shadow: 0 0 12px rgba(224, 120, 47, 0.7); }
+.branch.is-active .node__label { color: var(--parchment); }
+.branch.is-active .branch__nodes::before { background: linear-gradient(to bottom, var(--ember), rgba(224, 120, 47, 0.2)); }
+.skilltree__panel { max-width: 640px; margin: 36px auto 0; }
+@media (max-width: 980px) {
+  .skilltree__branches { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 40px; }
+  .skilltree__branches::after { display: none; }
+  .branch::before { display: none; }
+}
+@media (max-width: 560px) {
+  .skilltree__branches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* =========================================================
+   Quest log (Journey)
+   ========================================================= */
+.journey__lede { margin-top: 10px; }
+.stop__quest { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+.stop__badge { padding: 2px 8px; border-radius: 3px; letter-spacing: 0.12em; background: rgba(91, 168, 160, 0.14); color: var(--oasis); }
+.stop--active .stop__badge { background: var(--ember); color: var(--ink); }
+.stop--active .stop__quest > span:first-child { color: var(--sand); }
+.stop--active .stop__body {
+  margin: -14px -18px 0; padding: 14px 18px 18px; border-radius: 10px;
+  border: 1px solid rgba(224, 120, 47, 0.45); background: rgba(224, 120, 47, 0.06);
+  box-shadow: 0 0 40px -18px rgba(224, 120, 47, 0.6);
+}
+/* objectives: completed ticks, the active quest's objectives in ember */
+.stop__points li { padding-left: 22px; }
+.stop__points li::before {
+  content: ""; top: 0.42em; width: 9px; height: 5px; background: none;
+  border-left: 2px solid var(--oasis); border-bottom: 2px solid var(--oasis); transform: rotate(-45deg);
+}
+.stop--active .stop__points li::before { width: 7px; height: 7px; top: 0.5em; border: 0; transform: rotate(45deg); background: var(--ember); }
