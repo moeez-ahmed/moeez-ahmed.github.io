@@ -939,6 +939,67 @@ function initJourney() {
 }
 
 /* ---------------------------------------------------------------
+   The living world: one 3D desert behind the page, flown by scrolling
+   --------------------------------------------------------------- */
+function initWorld() {
+  const canvas = $("#world");
+  const gates = $$(".gate");
+
+  // chapter title cards rise in and fade out as they pass the middle of the screen
+  let ticking = false;
+  function updateGates() {
+    ticking = false;
+    const vh = innerHeight;
+    gates.forEach((g) => {
+      const r = g.getBoundingClientRect();
+      const p = clamp((vh - r.top) / (vh + r.height), 0, 1); // 0 entering at the bottom, 1 gone at the top
+      const o = clamp(1 - Math.abs(p - 0.5) * 3.2, 0, 1);
+      g.style.setProperty("--gate-o", o.toFixed(3));
+      g.style.setProperty("--gate-y", `${((0.5 - p) * 70).toFixed(1)}px`);
+      g.style.setProperty("--gate-s", (0.96 + o * 0.04).toFixed(3));
+    });
+  }
+  const onScroll = () => {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(updateGates);
+    }
+  };
+
+  if (!canvas || !WEBGL || REDUCED) return; // gates stay as simple static chapter titles
+  document.body.classList.add("has-world");
+  addEventListener("scroll", onScroll, { passive: true });
+  addEventListener("resize", onScroll);
+  updateGates();
+
+  let anchors = [];
+  const measure = () => {
+    anchors = $$("[data-world-shot]")
+      .map((el) => {
+        const r = el.getBoundingClientRect();
+        return { y: r.top + scrollY + r.height / 2, shot: el.dataset.worldShot };
+      })
+      .sort((a, b) => a.y - b.y);
+  };
+  measure();
+  new ResizeObserver(measure).observe(document.body);
+  addEventListener("load", measure);
+
+  import("./three/world.js")
+    .then(({ mountWorld }) => {
+      const world = mountWorld(canvas, { getAnchors: () => anchors, small: SMALL });
+      requestAnimationFrame(() => canvas.classList.add("is-ready"));
+      // the hero film covers the screen at the top, so the world rests until it scrolls away
+      new IntersectionObserver(([e]) => world.setPaused(e.intersectionRatio > 0.9), { threshold: [0, 0.5, 0.9, 1] }).observe($(".hero"));
+    })
+    .catch((err) => {
+      console.warn("World could not start:", err);
+      document.body.classList.remove("has-world");
+      removeEventListener("scroll", onScroll);
+    });
+}
+
+/* ---------------------------------------------------------------
    Contact
    --------------------------------------------------------------- */
 function initContact() {
@@ -975,6 +1036,7 @@ safely("systems", initSystems);
 safely("about", initAbout);
 safely("journey", initJourney);
 safely("contact", initContact);
+safely("world", initWorld);
 
 // deep link: /#project/kingdomland opens that case study
 const deep = decodeURIComponent(location.hash).match(/^#project\/(.+)$/);
