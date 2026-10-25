@@ -46,6 +46,7 @@
         <li><a class="nav__cta" href="#contact">Contact</a></li>
       </ul>
     </nav>
+    <button class="nav__sound" id="sound-btn" type="button" aria-pressed="false" aria-label="Sound effects off" title="Sound effects"><svg class="i-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none"/></svg><svg class="i-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5" fill="none"/></svg></button>
     <button class="nav__trophy" id="trophy-btn" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v3a5 5 0 0 1-10 0V4zM5 5H3v2a4 4 0 0 0 4 4M19 5h2v2a4 4 0 0 1-4 4M12 12v4M8.5 20h7M10 16h4l.5 4h-5z"/></svg><span id="trophy-count">0/0</span></button>
   </header>
 
@@ -108,6 +109,7 @@
               </div>
               <span class="player__time" id="t-total">0:00</span>
               <button class="icon-btn" id="mute-btn" type="button" aria-label="Mute"><svg viewBox="0 0 24 24" class="i-vol"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><svg viewBox="0 0 24 24" class="i-mute"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+              <button class="icon-btn player__cinema" id="cinema-btn" type="button" aria-pressed="true" aria-label="Cinema mode" title="Cinema mode: dim the page while a film plays"><svg viewBox="0 0 24 24"><path d="M3 6h18v12H3z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7 18v2M17 18v2M3 9h18" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button>
               <button class="icon-btn" id="fs-btn" type="button" aria-label="Full screen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
             </div>
           </div>
